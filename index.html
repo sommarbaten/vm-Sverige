@@ -134,6 +134,7 @@
   .evic{width:18px;flex-shrink:0;text-align:center}
   .evfl{flex-shrink:0}
   .evnm{color:var(--text)}
+  .tapn{cursor:pointer;border-bottom:1px dotted var(--faint)}
   .evtag{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--line);padding:1px 5px;border-radius:5px;margin-left:4px}
   .evsec{padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--line)}
   .lut{margin-top:9px}
@@ -374,11 +375,12 @@ function fetchLive(){
             if(!isGoal&&!yellow&&!red)return;
             var ath=(de.athletesInvolved&&de.athletesInvolved[0])||null;
             var nm=ath?(ath.shortName||ath.displayName||ath.fullName||""):"";
+            var aid=ath&&ath.id?ath.id:"";
             var tid=de.team&&de.team.id;
             var sideName=(tid===hId)?hn:(tid===aId)?an:null;
             var min=(de.clock&&de.clock.displayValue)?de.clock.displayValue:"";
             var kind=isGoal?(og?"og":(pen?"pen":"goal")):(red?"red":"yellow");
-            evs.push({min:min,kind:kind,name:nm,team:sideName});
+            evs.push({min:min,kind:kind,name:nm,team:sideName,id:aid});
             if(isGoal&&!og&&nm){
               var k=nm+"|"+(sideName||"");
               if(!scorerMap[k])scorerMap[k]={name:nm,team:sideName,goals:0,pens:0};
@@ -469,6 +471,21 @@ function fetchPlayer(id){
     .then(function(d){ playerCache[id]=parsePlayer(d); playerLoading[id]=false; render(); })
     .catch(function(){ playerCache[id]=null; playerLoading[id]=false; render(); });
 }
+function heightCm(a){
+  var s=a.displayHeight||"";
+  if(/cm/i.test(s))return s.replace(/\s*cm/i,"").trim()+" cm";
+  var mm=s.match(/([\d.]+)\s*m(?!m)/i); if(mm)return Math.round(parseFloat(mm[1])*100)+" cm";
+  var ft=s.match(/(\d+)\s*'\s*(\d+)?/); if(ft)return Math.round((parseInt(ft[1])*12+(parseInt(ft[2])||0))*2.54)+" cm";
+  if(a.height&&!isNaN(a.height))return Math.round(a.height>100?a.height:a.height*2.54)+" cm";
+  return s;
+}
+function weightKg(a){
+  var s=a.displayWeight||"";
+  if(/kg/i.test(s))return s.replace(/\s*kg/i,"").trim()+" kg";
+  var lb=s.match(/([\d.]+)\s*lbs?/i); if(lb)return Math.round(parseFloat(lb[1])*0.453592)+" kg";
+  if(a.weight&&!isNaN(a.weight))return Math.round(a.weight<140?a.weight:a.weight*0.453592)+" kg";
+  return s;
+}
 function parsePlayer(d){
   var a=(d&&d.athlete)||d||{};
   if(!a||(!a.displayName&&!a.fullName))return null;
@@ -478,8 +495,8 @@ function parsePlayer(d){
     pos:(a.position&&(a.position.displayName||a.position.name))||"",
     num:a.jersey||"",
     age:a.age||"",
-    ht:a.displayHeight||"",
-    wt:a.displayWeight||"",
+    ht:heightCm(a),
+    wt:weightKg(a),
     nat:nat,
     team:(a.team&&(a.team.displayName||a.team.name))||"",
     hs:(a.headshot&&a.headshot.href)||""
@@ -723,7 +740,8 @@ function eventsInner(evs){
   evs.forEach(function(e){
     var fl=e.team&&T[e.team]?T[e.team][0]:"";
     var tag=e.kind==="pen"?' <span class="evtag">str</span>':e.kind==="og"?' <span class="evtag">sj\u00e4lvm\u00e5l</span>':"";
-    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span><span class="evnm">'+e.name+tag+'</span></div>';
+    var nm=e.id?'<span class="evnm tapn" data-act="player" data-val="'+e.id+'">'+e.name+'</span>':'<span class="evnm">'+e.name+'</span>';
+    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span>'+nm+tag+'</div>';
   });
   return h;
 }
