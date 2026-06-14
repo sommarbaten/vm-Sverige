@@ -566,6 +566,23 @@ function parseWinProb(d,flip){
   h=Math.round((h||0)*100); a=Math.round((a||0)*100); t=Math.round((t||0)*100);
   return flip?{h:a,d:t,a:h}:{h:h,d:t,a:a};
 }
+function pickHighlight(vids){
+  if(!vids||!vids.length)return "";
+  var pos=/highlight|condensed|all the goals|extended|full match|\bgoals\b/i;
+  var neg=/reaction|interview|press|preview|analysis|\btalks?\b|react|build.?up|studio|breakdown|presser|sit-?down|one-on-one|conference|how to watch|what to/i;
+  var best=null,bestScore=-1e9;
+  vids.forEach(function(v){
+    var txt=((v.headline||"")+" "+(v.shortHeadline||"")+" "+(v.title||"")+" "+(v.description||"")+" "+(v.caption||"")+" "+(v.type||"")).toLowerCase();
+    var href=(v.links&&((v.links.web&&v.links.web.href)||(v.links.source&&v.links.source.href)||(v.links.mobile&&v.links.mobile.href)))||v.href||"";
+    if(!href)return;
+    var score=0;
+    if(pos.test(txt))score+=100;
+    if(neg.test(txt))score-=100;
+    score+=Math.min(v.duration||0,600)/60;
+    if(score>bestScore){bestScore=score;best=href;}
+  });
+  return bestScore>=50?best:"";
+}
 function parseMatchInfo(d){
   var info={ref:"",recapTitle:"",recapUrl:"",hlUrl:""};
   var offs=(d&&d.gameInfo&&d.gameInfo.officials)||(d&&d.officials)||[];
@@ -575,8 +592,7 @@ function parseMatchInfo(d){
   }
   var art=(d&&d.article)||(d&&d.headlines&&d.headlines[0])||null;
   if(art){ info.recapTitle=art.headline||art.title||art.description||""; info.recapUrl=(art.links&&art.links.web&&art.links.web.href)||art.link||""; }
-  var vids=(d&&d.videos)||[];
-  if(vids[0]&&vids[0].links&&vids[0].links.web&&vids[0].links.web.href)info.hlUrl=vids[0].links.web.href;
+  info.hlUrl=pickHighlight((d&&d.videos)||[]);
   return info;
 }
 function formDots(str){
