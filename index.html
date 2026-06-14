@@ -125,6 +125,16 @@
   .tbl td.pts{color:var(--text);font-weight:800}
   .tbl tr.adv td.pos{box-shadow:inset 3px 0 0 var(--green)}
   .tbl tr.swe td{background:rgba(244,196,48,.06)}
+  .row.tap{cursor:pointer}
+  .row.opened{margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+  .caret{margin-left:5px;color:var(--faint);font-size:9px}
+  .evts{margin:-2px 0 7px;padding:9px 13px;border-radius:0 0 13px 13px;background:var(--bg2);border:1px solid var(--line);border-top:none}
+  .evln{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12.5px}
+  .evmin{width:42px;flex-shrink:0;color:var(--faint);font-variant-numeric:tabular-nums;font-weight:700}
+  .evic{width:18px;flex-shrink:0;text-align:center}
+  .evfl{flex-shrink:0}
+  .evnm{color:var(--text)}
+  .evtag{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--line);padding:1px 5px;border-radius:5px;margin-left:4px}
   footer{margin-top:26px;text-align:center;color:var(--faint);font-size:11px}
 </style>
 </head>
@@ -289,6 +299,8 @@ function swedishName(team){
 var pairIndex={};
 MATCHES.forEach(function(m){if(!m.ko)pairIndex[[m.home,m.away].sort().join("|")]=m;});
 var results={};
+var events={};
+var scorers=[];
 var live={status:"idle",ts:null};
 
 function fetchLive(){
@@ -297,7 +309,7 @@ function fetchLive(){
   fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260628&limit=300")
     .then(function(r){return r.json()})
     .then(function(d){
-      var res={};
+      var res={}, evMap={}, scorerMap={};
       (d.events||[]).forEach(function(ev){
         try{
           var comp=ev.competitions&&ev.competitions[0]; if(!comp)return;
@@ -312,9 +324,32 @@ function fetchLive(){
           if(isNaN(hs))hs=null; if(isNaN(as))as=null;
           var oh,oa; if(fx.home===hn){oh=hs;oa=as;}else{oh=as;oa=hs;}
           res[fx.id]={hs:oh,as:oa,state:st,detail:detail};
+          // match events
+          var hId=home.team&&home.team.id, aId=away.team&&away.team.id;
+          var evs=[];
+          (comp.details||[]).forEach(function(de){
+            var isGoal=de.scoringPlay===true, og=de.ownGoal===true, pen=de.penaltyKick===true;
+            var yellow=de.yellowCard===true, red=de.redCard===true;
+            if(!isGoal&&!yellow&&!red)return;
+            var ath=(de.athletesInvolved&&de.athletesInvolved[0])||null;
+            var nm=ath?(ath.shortName||ath.displayName||ath.fullName||""):"";
+            var tid=de.team&&de.team.id;
+            var sideName=(tid===hId)?hn:(tid===aId)?an:null;
+            var min=(de.clock&&de.clock.displayValue)?de.clock.displayValue:"";
+            var kind=isGoal?(og?"og":(pen?"pen":"goal")):(red?"red":"yellow");
+            evs.push({min:min,kind:kind,name:nm,team:sideName});
+            if(isGoal&&!og&&nm){
+              var k=nm+"|"+(sideName||"");
+              if(!scorerMap[k])scorerMap[k]={name:nm,team:sideName,goals:0,pens:0};
+              scorerMap[k].goals++; if(pen)scorerMap[k].pens++;
+            }
+          });
+          if(evs.length)evMap[fx.id]=evs;
         }catch(e){}
       });
-      results=res; live.status="ok"; live.ts=new Date(); render();
+      results=res; events=evMap;
+      scorers=Object.keys(scorerMap).map(function(k){return scorerMap[k]}).sort(function(a,b){return b.goals-a.goals||b.pens-a.pens||a.name.localeCompare(b.name)});
+      live.status="ok"; live.ts=new Date(); render();
     })
     .catch(function(){ live.status="error"; render(); });
 }
@@ -349,7 +384,7 @@ function chColor(ch){return ch==="SVT"?"var(--svt)":ch==="TV4"?"var(--tv4)":"var
 function isSwe(m){return m.home==="Sverige"||m.away==="Sverige"||m.sweden}
 function dayLabel(date){var d=date.split("-").map(Number);var dt=new Date(d[0],d[1]-1,d[2]);return WD[dt.getDay()]+" "+d[2]+" "+MO[d[1]-1];}
 
-var state={tab:"schema",ch:"Alla",grp:"Alla",swe:false,played:false};
+var state={tab:"schema",ch:"Alla",grp:"Alla",swe:false,played:false,open:{}};
 
 function render(){
   var now=new Date();
@@ -368,7 +403,7 @@ function render(){
   html+='<div class="tabs">'+
         '<button class="tab '+(state.tab==="schema"?"on":"")+'" data-act="tab" data-val="schema">Schema</button>'+
         '<button class="tab '+(state.tab==="tabeller"?"on":"")+'" data-act="tab" data-val="tabeller">Tabeller</button>'+
-        '<button class="tab '+(state.tab==="grupper"?"on":"")+'" data-act="tab" data-val="grupper">Grupper</button></div>';
+        '<button class="tab '+(state.tab==="skytteliga"?"on":"")+'" data-act="tab" data-val="skytteliga">Skytteliga</button></div>';
 
   if(state.tab==="schema"){
     html+=liveBar();
@@ -419,20 +454,7 @@ function render(){
       if(curDay!==null)html+='</div>';
     }
     html+='<div class="note">Slutspelets tider och kanaler \u00e4r klara \u2014 vilka lag som m\u00f6ts avg\u00f6rs efter hand. Final 19 juli 21:00 (TV4), bronsmatch 18 juli 23:00 (SVT). Tider och kanaler kan \u00e4ndras med kort varsel av SVT/TV4.</div>';
-  } else if(state.tab==="grupper"){
-    // groups
-    html+='<div class="groups">';
-    GROUP_LETTERS.forEach(function(g){
-      var swe=g==="F";
-      var teams=Object.keys(T).filter(function(t){return T[t][1]===g});
-      html+='<div class="gcard'+(swe?" swe":"")+'"><div class="gh"><span class="gn">Grupp '+g+'</span>'+(swe?'<span class="swetag">Sverige</span>':'')+'</div>';
-      teams.forEach(function(t){
-        html+='<div class="gteam'+(t==="Sverige"?" hi":"")+'"><span class="fl">'+T[t][0]+'</span><span>'+t+'</span></div>';
-      });
-      html+='</div>';
-    });
-    html+='<div class="gfull">De tv\u00e5 b\u00e4sta i varje grupp g\u00e5r vidare till slutspel, plus de \u00e5tta b\u00e4sta treorna \u2014 totalt 32 lag.</div></div>';
-  } else {
+  } else if(state.tab==="tabeller"){
     // tables
     html+=liveBar();
     var tables=computeTables();
@@ -455,6 +477,25 @@ function render(){
       html+='</tbody></table></div>';
     });
     html+='<div class="gfull" style="display:block">\u25b8 Gr\u00f6n kant = topp 2 (vidare till slutspel). \u00c5tta b\u00e4sta treorna g\u00e5r ocks\u00e5 vidare.</div></div>';
+  } else {
+    // skytteliga
+    html+=liveBar();
+    if(scorers.length===0){
+      html+='<div class="note" style="margin-top:12px">Inga m\u00e5l \u00e4n \u2014 skyttekungen koras under turneringens g\u00e5ng. M\u00e5l dyker upp h\u00e4r automatiskt.</div>';
+    }else{
+      html+='<div style="margin-top:14px"><table class="tbl"><thead><tr><th></th><th class="lft">Spelare</th><th class="lft">Lag</th><th>M\u00e5l</th></tr></thead><tbody>';
+      scorers.forEach(function(s,i){
+        var top=i===0, swe=s.team==="Sverige";
+        var fl=s.team&&T[s.team]?T[s.team][0]:"";
+        var pens=s.pens>0?'<span style="color:var(--faint);font-weight:500;font-size:11px"> ('+s.pens+' str)</span>':'';
+        html+='<tr class="'+(swe?"swe":"")+'"><td class="pos">'+(i+1)+'</td>'+
+              '<td class="lft" style="'+(top?"color:var(--gold);font-weight:800":"")+'">'+s.name+'</td>'+
+              '<td class="lft" style="color:var(--sub);font-weight:500">'+fl+' '+(s.team||"")+'</td>'+
+              '<td class="pts" style="'+(top?"color:var(--gold)":"")+'">'+s.goals+pens+'</td></tr>';
+      });
+      html+='</tbody></table></div>';
+    }
+    html+='<div class="gfull" style="display:block">Sj\u00e4lvm\u00e5l r\u00e4knas inte till n\u00e5gon spelares saldo. (str) = straffm\u00e5l.</div>';
   }
 
   html+='<footer>S\u00e4nds av SVT &amp; TV4 i Sverige \u00b7 104 matcher \u00b7 48 lag</footer>';
@@ -470,6 +511,9 @@ function rowHTML(m,now,next){
   var swe=isSwe(m);
   var r=results[m.id];
   var hasScore=r&&r.state!=="pre"&&r.hs!=null&&r.as!=null;
+  var evs=events[m.id]||[];
+  var hasEv=evs.length>0;
+  var open=!!state.open[m.id];
   var live,played;
   if(r){live=r.state==="in";played=r.state==="post";}
   else{var end=m.dt.getTime()+7.2e6;played=end<now.getTime();live=m.dt.getTime()<=now.getTime()&&now.getTime()<end;}
@@ -481,7 +525,8 @@ function rowHTML(m,now,next){
   else sub='';
   var hWin=hasScore&&r.hs>r.as, aWin=hasScore&&r.as>r.hs;
   var dim=(played&&!hasScore);
-  return '<div class="row'+(swe?" swe":"")+(dim?" played":"")+'">'+
+  var caret=hasEv?'<span class="caret">'+(open?"\u25b4":"\u25be")+'</span>':'';
+  var out='<div class="row'+(swe?" swe":"")+(dim?" played":"")+(hasEv?" tap":"")+(hasEv&&open?" opened":"")+'"'+(hasEv?' data-act="match" data-val="'+m.id+'"':'')+'>'+
     (swe?'<div class="swebar"></div>':'')+
     '<div class="time"><span class="t" style="color:'+(live?"var(--green)":"var(--text)")+'">'+m.time+'</span>'+sub+'</div>'+
     '<div class="teams">'+
@@ -489,7 +534,19 @@ function rowHTML(m,now,next){
       teamHTML(af,m.away,m.away==="Sverige",m.ko,hasScore?r.as:null,aWin)+
     '</div>'+
     '<div class="badges">'+chBadge(m.ch)+
-    '<span class="gtag'+(m.g==="F"?" swe":"")+'">'+(m.ko?m.round:"Grupp "+m.g)+'</span></div></div>';
+    '<span class="gtag'+(m.g==="F"?" swe":"")+'">'+(m.ko?m.round:"Grupp "+m.g)+caret+'</span></div></div>';
+  if(hasEv&&open)out+=eventsHTML(evs);
+  return out;
+}
+function eventsHTML(evs){
+  var ic={goal:"\u26bd",pen:"\u26bd",og:"\u26bd",yellow:"\uD83D\uDFE8",red:"\uD83D\uDFE5"};
+  var h='<div class="evts">';
+  evs.forEach(function(e){
+    var fl=e.team&&T[e.team]?T[e.team][0]:"";
+    var tag=e.kind==="pen"?' <span class="evtag">str</span>':e.kind==="og"?' <span class="evtag">sj\u00e4lvm\u00e5l</span>':"";
+    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span><span class="evnm">'+e.name+tag+'</span></div>';
+  });
+  return h+'</div>';
 }
 function teamHTML(flag,name,hi,ko,score,win){
   var sc=(score!=null)?'<span class="sc'+(win?" win":"")+'">'+score+'</span>':'';
@@ -523,6 +580,7 @@ document.addEventListener("click",function(e){
   else if(a==="played")state.played=!state.played;
   else if(a==="clear"){state.ch="Alla";state.grp="Alla";state.swe=false;state.played=false;}
   else if(a==="refresh"){fetchLive();return;}
+  else if(a==="match"){state.open[v]=!state.open[v];}
   render();
 });
 
