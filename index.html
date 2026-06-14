@@ -165,6 +165,9 @@
   .pc-x{position:absolute;top:12px;right:12px;background:transparent;border:none;color:var(--sub);font-size:16px;cursor:pointer;line-height:1}
   .pc-name{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:var(--text);margin-bottom:12px;padding-right:20px}
   .pc-img{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--bg2);flex-shrink:0}
+  .pc-av{position:relative;width:44px;height:44px;border-radius:50%;background:var(--bg2);overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
+  .pc-ini{position:absolute;color:var(--sub);font-weight:800;font-size:15px;letter-spacing:.02em}
+  .pc-av .pc-img{position:relative;z-index:1}
   .pc-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
   .pc-row:last-child{border-bottom:none}
   .pc-k{color:var(--faint)}
@@ -690,10 +693,12 @@ function playerOverlay(){
   if(playerLoading[id]||p===undefined)body='<div class="pc-msg">H\u00e4mtar spelarinfo\u2026</div>';
   else if(!p)body='<div class="pc-msg">Ingen spelarinfo tillg\u00e4nglig f\u00f6r den h\u00e4r spelaren.</div>';
   else{
+    var hs=(p.hs)||("https://a.espncdn.com/i/headshots/soccer/players/full/"+id+".png");
+    var ini=(p.name||"").split(/\s+/).map(function(w){return w&&w[0]?w[0]:""}).join("").slice(0,2).toUpperCase();
     var rows=[["Position",p.pos],["Tr\u00f6jnr",p.num],["\u00c5lder",p.age],["L\u00e4ngd",p.ht],["Vikt",p.wt],["Nationalitet",p.nat],["Lag",p.team]];
     var r='';
     rows.forEach(function(x){if(x[1]!==""&&x[1]!=null)r+='<div class="pc-row"><span class="pc-k">'+x[0]+'</span><span class="pc-v">'+x[1]+'</span></div>';});
-    body='<div class="pc-name">'+(p.hs?'<img class="pc-img" src="'+p.hs+'" alt="">':'')+'<span>'+p.name+'</span></div>'+(r||'<div class="pc-msg">Begr\u00e4nsad info tillg\u00e4nglig.</div>');
+    body='<div class="pc-name"><span class="pc-av"><span class="pc-ini">'+ini+'</span><img class="pc-img" src="'+hs+'" alt="" onerror="this.style.display=\'none\'"></span><span>'+p.name+'</span></div>'+(r||'<div class="pc-msg">Begr\u00e4nsad info tillg\u00e4nglig.</div>');
   }
   return '<div class="pc-back" data-act="closePlayer"><div class="pc-card" data-act="noop"><button class="pc-x" data-act="closePlayer">\u2715</button>'+body+'</div></div>';
 }
