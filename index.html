@@ -361,6 +361,8 @@ function swedishName(team){
   return null;
 }
 function statMap(c){var o={};(c.statistics||[]).forEach(function(s){o[s.name]=s.displayValue;});return o;}
+function mlOf(o){if(!o)return null;if(o.moneyLine!=null)return o.moneyLine;if(o.current&&o.current.moneyLine!=null)return o.current.moneyLine;if(o.close&&o.close.moneyLine!=null)return o.close.moneyLine;return null;}
+function amToDec(a){if(a==null||a===0||isNaN(a))return null;a=Number(a);var d=a>0?(a/100+1):(100/Math.abs(a)+1);return d.toFixed(2);}
 var pairIndex={};
 MATCHES.forEach(function(m){if(!m.ko)pairIndex[[m.home,m.away].sort().join("|")]=m;});
 var results={};
@@ -406,7 +408,11 @@ function fetchLive(){
           if(hForm)tf[hn]=hForm; if(aForm)tf[an]=aForm;
           var form=flip?{home:aForm,away:hForm}:{home:hForm,away:aForm};
           var ven=comp.venue||{}, addr=ven.address||{};
-          var odds=(comp.odds&&comp.odds[0]&&(comp.odds[0].details||comp.odds[0].summary))||"";
+          var o0=comp.odds&&comp.odds[0], odds=null;
+          if(o0){
+            var hd=amToDec(mlOf(o0.homeTeamOdds)), dd=amToDec(mlOf(o0.drawOdds)), ad=amToDec(mlOf(o0.awayTeamOdds));
+            if(hd||ad)odds=flip?{h:ad,d:dd,a:hd}:{h:hd,d:dd,a:ad};
+          }
           res[fx.id]={hs:oh,as:oa,state:st,detail:detail,eid:ev.id,flip:flip,stats:stats,form:form,
             venue:ven.fullName||ven.shortName||"",city:addr.city||"",country:addr.country||"",
             att:(comp.attendance!=null?comp.attendance:""),odds:odds};
@@ -650,7 +656,10 @@ function infoHTML(m){
   if(r.venue)bits.push(["Arena",r.venue+(r.city?", "+r.city:"")]);
   if(r.att!==""&&r.att!=null)bits.push(["\u00c5sk\u00e5dare",Number(r.att).toLocaleString("sv-SE")]);
   if(mi.ref)bits.push(["Domare",mi.ref]);
-  if(r.odds)bits.push(["Odds",r.odds]);
+  if(r.odds&&(r.odds.h||r.odds.a)){
+    var hfl=m.ko?"":T[m.home][0], afl=m.ko?"":T[m.away][0];
+    bits.push(["Odds (1X2)",hfl+" "+(r.odds.h||"-")+" \u00b7 X "+(r.odds.d||"-")+" \u00b7 "+afl+" "+(r.odds.a||"-")]);
+  }
   if(!bits.length)return '';
   var h='<div class="luhead">Matchfakta</div>';
   bits.forEach(function(b){h+='<div class="ifrow"><span class="ifk">'+b[0]+'</span><span class="ifv">'+b[1]+'</span></div>';});
