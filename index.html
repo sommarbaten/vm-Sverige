@@ -135,6 +135,21 @@
   .evfl{flex-shrink:0}
   .evnm{color:var(--text)}
   .evtag{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--line);padding:1px 5px;border-radius:5px;margin-left:4px}
+  .evsec{padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--line)}
+  .lut{margin-top:9px}
+  .lut:first-child{margin-top:0}
+  .luhead{font-size:11.5px;font-weight:800;color:var(--text);letter-spacing:.02em;margin-bottom:5px}
+  .luform{color:var(--faint);font-weight:600;font-size:10px;margin-left:6px;letter-spacing:.04em}
+  .lumsg{font-size:12px;color:var(--faint);padding:2px 0}
+  .lup{display:flex;align-items:center;gap:8px;padding:2px 0;font-size:12px}
+  .lunum{width:20px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums;flex-shrink:0}
+  .lupos{width:30px;color:var(--faint);font-size:9.5px;text-transform:uppercase;flex-shrink:0}
+  .lupn{color:var(--text)}
+  .luout{color:var(--tv4);font-size:10px;font-weight:700;margin-left:5px}
+  .lusubs{margin-top:6px;font-size:11.5px;color:var(--sub);line-height:1.6}
+  .lusublbl{color:var(--faint);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+  .luin{color:var(--green);font-weight:600}
+  .luun{color:var(--faint)}
   footer{margin-top:26px;text-align:center;color:var(--faint);font-size:11px}
 </style>
 </head>
@@ -301,6 +316,8 @@ MATCHES.forEach(function(m){if(!m.ko)pairIndex[[m.home,m.away].sort().join("|")]
 var results={};
 var events={};
 var scorers=[];
+var lineups={};
+var lineupLoading={};
 var live={status:"idle",ts:null};
 
 function fetchLive(){
@@ -323,7 +340,7 @@ function fetchLive(){
           var hs=parseInt(home.score,10), as=parseInt(away.score,10);
           if(isNaN(hs))hs=null; if(isNaN(as))as=null;
           var oh,oa; if(fx.home===hn){oh=hs;oa=as;}else{oh=as;oa=hs;}
-          res[fx.id]={hs:oh,as:oa,state:st,detail:detail};
+          res[fx.id]={hs:oh,as:oa,state:st,detail:detail,eid:ev.id};
           // match events
           var hId=home.team&&home.team.id, aId=away.team&&away.team.id;
           var evs=[];
@@ -365,6 +382,67 @@ function computeTables(){
   var out={};
   GROUP_LETTERS.forEach(function(g){out[g]=Object.keys(tbl[g]).map(function(k){return tbl[g][k]}).sort(function(a,b){return b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf||a.t.localeCompare(b.t)});});
   return out;
+}
+function fetchLineup(fid){
+  var r=results[fid]; if(!r||!r.eid)return;
+  if(lineups[fid]!==undefined||lineupLoading[fid])return;
+  lineupLoading[fid]=true; render();
+  fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event="+r.eid)
+    .then(function(x){return x.json()})
+    .then(function(d){
+      var out=null;
+      if(d&&d.rosters&&d.rosters.length){
+        out=d.rosters.map(parseRoster).filter(function(t){return t.starters.length||t.subs.length});
+        if(!out.length)out=null;
+      }
+      lineups[fid]=out; lineupLoading[fid]=false; render();
+    })
+    .catch(function(){ lineups[fid]=null; lineupLoading[fid]=false; render(); });
+}
+function timeStr(v){
+  if(v==null)return""; if(typeof v==="object")v=v.displayValue||v.value||"";
+  if(v===""||v==null)return""; v=String(v); if(v.indexOf("'")<0)v=v+"'"; return v;
+}
+function parseRoster(r){
+  var sw=swedishName(r.team);
+  var teamName=sw||((r.team&&r.team.displayName)||"");
+  var form=(typeof r.formation==="string")?r.formation:((r.formation&&r.formation.name)||"");
+  var starters=[],subs=[];
+  (r.roster||[]).forEach(function(p){
+    var a=p.athlete||{};
+    var item={
+      num:p.jersey||a.jersey||"",
+      pos:(p.position&&p.position.abbreviation)||(a.position&&a.position.abbreviation)||"",
+      name:a.shortName||a.displayName||a.fullName||"",
+      subOut:p.subbedOut===true, subIn:p.subbedIn===true,
+      outT:timeStr(p.subbedOutTime!=null?p.subbedOutTime:p.subOutTime),
+      inT:timeStr(p.subbedInTime!=null?p.subbedInTime:p.subInTime)
+    };
+    if(p.starter===true)starters.push(item); else subs.push(item);
+  });
+  return {team:teamName,formation:form,starters:starters,subs:subs};
+}
+function lineupHTML(m){
+  if(lineupLoading[m.id])return '<div class="luhead">Laguppst\u00e4llning</div><div class="lumsg">H\u00e4mtar\u2026</div>';
+  var lu=lineups[m.id];
+  if(lu===undefined)return '';
+  if(!lu)return '<div class="luhead">Laguppst\u00e4llning</div><div class="lumsg">Ej tillg\u00e4nglig \u00e4n (sl\u00e4pps oftast ~1 tim f\u00f6re avspark).</div>';
+  var h='';
+  lu.forEach(function(t){
+    var fl=t.team&&T[t.team]?T[t.team][0]:"";
+    h+='<div class="lut"><div class="luhead">'+fl+' '+t.team+(t.formation?'<span class="luform">'+t.formation+'</span>':'')+'</div>';
+    t.starters.forEach(function(p){
+      h+='<div class="lup"><span class="lunum">'+(p.num||"")+'</span><span class="lupos">'+(p.pos||"")+'</span><span class="lupn">'+p.name+'</span>'+(p.subOut?'<span class="luout">\u2193'+(p.outT||"")+'</span>':'')+'</div>';
+    });
+    if(t.subs.length){
+      var parts=[];
+      t.subs.filter(function(p){return p.subIn}).forEach(function(p){parts.push('<span class="luin">'+p.name+' \u2191'+(p.inT||"")+'</span>');});
+      t.subs.filter(function(p){return !p.subIn}).forEach(function(p){parts.push('<span class="luun">'+p.name+'</span>');});
+      h+='<div class="lusubs"><span class="lusublbl">Avbytare:</span> '+parts.join(", ")+'</div>';
+    }
+    h+='</div>';
+  });
+  return h;
 }
 function hhmm(d){return d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");}
 function renderLiveBar(){var el=document.getElementById("livebar");if(el)el.outerHTML=liveBar();}
@@ -525,8 +603,9 @@ function rowHTML(m,now,next){
   else sub='';
   var hWin=hasScore&&r.hs>r.as, aWin=hasScore&&r.as>r.hs;
   var dim=(played&&!hasScore);
-  var caret=hasEv?'<span class="caret">'+(open?"\u25b4":"\u25be")+'</span>':'';
-  var out='<div class="row'+(swe?" swe":"")+(dim?" played":"")+(hasEv?" tap":"")+(hasEv&&open?" opened":"")+'"'+(hasEv?' data-act="match" data-val="'+m.id+'"':'')+'>'+
+  var expandable=!!(r&&(r.state==="in"||r.state==="post"));
+  var caret=expandable?'<span class="caret">'+(open?"\u25b4":"\u25be")+'</span>':'';
+  var out='<div class="row'+(swe?" swe":"")+(dim?" played":"")+(expandable?" tap":"")+(expandable&&open?" opened":"")+'"'+(expandable?' data-act="match" data-val="'+m.id+'"':'')+'>'+
     (swe?'<div class="swebar"></div>':'')+
     '<div class="time"><span class="t" style="color:'+(live?"var(--green)":"var(--text)")+'">'+m.time+'</span>'+sub+'</div>'+
     '<div class="teams">'+
@@ -535,18 +614,24 @@ function rowHTML(m,now,next){
     '</div>'+
     '<div class="badges">'+chBadge(m.ch)+
     '<span class="gtag'+(m.g==="F"?" swe":"")+'">'+(m.ko?m.round:"Grupp "+m.g)+caret+'</span></div></div>';
-  if(hasEv&&open)out+=eventsHTML(evs);
+  if(expandable&&open){
+    var inner='';
+    if(evs.length)inner+='<div class="evsec">'+eventsInner(evs)+'</div>';
+    inner+=lineupHTML(m);
+    if(!inner)inner='<div class="lumsg">Inga detaljer \u00e4n.</div>';
+    out+='<div class="evts">'+inner+'</div>';
+  }
   return out;
 }
-function eventsHTML(evs){
+function eventsInner(evs){
   var ic={goal:"\u26bd",pen:"\u26bd",og:"\u26bd",yellow:"\uD83D\uDFE8",red:"\uD83D\uDFE5"};
-  var h='<div class="evts">';
+  var h='';
   evs.forEach(function(e){
     var fl=e.team&&T[e.team]?T[e.team][0]:"";
     var tag=e.kind==="pen"?' <span class="evtag">str</span>':e.kind==="og"?' <span class="evtag">sj\u00e4lvm\u00e5l</span>':"";
     h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span><span class="evnm">'+e.name+tag+'</span></div>';
   });
-  return h+'</div>';
+  return h;
 }
 function teamHTML(flag,name,hi,ko,score,win){
   var sc=(score!=null)?'<span class="sc'+(win?" win":"")+'">'+score+'</span>':'';
@@ -580,7 +665,7 @@ document.addEventListener("click",function(e){
   else if(a==="played")state.played=!state.played;
   else if(a==="clear"){state.ch="Alla";state.grp="Alla";state.swe=false;state.played=false;}
   else if(a==="refresh"){fetchLive();return;}
-  else if(a==="match"){state.open[v]=!state.open[v];}
+  else if(a==="match"){state.open[v]=!state.open[v];if(state.open[v])fetchLineup(v);}
   render();
 });
 
