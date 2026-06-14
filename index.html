@@ -185,6 +185,8 @@
   .ifv{color:var(--text);font-weight:600;text-align:right}
   .rcaps{margin-top:10px;display:flex;flex-direction:column;gap:7px}
   .rcap{display:block;font-size:12.5px;color:var(--gold);text-decoration:none;font-weight:700;padding:8px 11px;border:1px solid var(--goldDim);border-radius:9px;background:rgba(244,196,48,.06)}
+  .rcap2{color:var(--sub);border-color:var(--line);background:var(--bg2)}
+  .evclip{margin-left:7px;color:var(--green);text-decoration:none;font-size:12px}
   .tform{margin-left:7px;display:inline-flex;gap:2px;vertical-align:middle}
   .fdot{width:6px;height:6px;border-radius:50%;display:inline-block}
   footer{margin-top:26px;text-align:center;color:var(--faint);font-size:11px}
@@ -345,6 +347,9 @@ var POS_SV={"goalkeeper":"M\u00e5lvakt","goalie":"M\u00e5lvakt","keeper":"M\u00e
 var COUNTRY_SV={"italy":"Italien","denmark":"Danmark","poland":"Polen","nigeria":"Nigeria","cameroon":"Kamerun","serbia":"Serbien","greece":"Grekland","ukraine":"Ukraina","russia":"Ryssland","ireland":"Irland","wales":"Wales","finland":"Finland","iceland":"Island","romania":"Rum\u00e4nien","hungary":"Ungern","slovakia":"Slovakien","slovenia":"Slovenien","mali":"Mali","cameroun":"Kamerun","china":"Kina","united states":"USA","czech republic":"Tjeckien","ivory coast":"Elfenbenskusten","cabo verde":"Kap Verde"};
 function posSv(s){if(!s)return"";var k=String(s).toLowerCase().trim();return POS_SV[k]||s;}
 function countrySv(s){if(!s)return"";var k=String(s).toLowerCase().trim();return COUNTRY_SV[k]||EN[k]||s;}
+var SWE2EN={"Mexiko":"Mexico","Sydafrika":"South Africa","Sydkorea":"South Korea","Tjeckien":"Czechia","Kanada":"Canada","Schweiz":"Switzerland","Qatar":"Qatar","Bosnien":"Bosnia","Brasilien":"Brazil","Marocko":"Morocco","Skottland":"Scotland","Haiti":"Haiti","USA":"USA","Australien":"Australia","Paraguay":"Paraguay","Turkiet":"Turkey","Tyskland":"Germany","Ecuador":"Ecuador","Elfenbenskusten":"Ivory Coast","Curacao":"Curacao","Nederl\u00e4nderna":"Netherlands","Japan":"Japan","Tunisien":"Tunisia","Sverige":"Sweden","Belgien":"Belgium","Iran":"Iran","Egypten":"Egypt","Nya Zeeland":"New Zealand","Spanien":"Spain","Uruguay":"Uruguay","Saudiarabien":"Saudi Arabia","Kap Verde":"Cape Verde","Frankrike":"France","Senegal":"Senegal","Norge":"Norway","Irak":"Iraq","Argentina":"Argentina","\u00d6sterrike":"Austria","Algeriet":"Algeria","Jordanien":"Jordan","Portugal":"Portugal","Colombia":"Colombia","Uzbekistan":"Uzbekistan","DR Kongo":"DR Congo","England":"England","Kroatien":"Croatia","Panama":"Panama","Ghana":"Ghana"};
+function enName(s){return SWE2EN[s]||s;}
+function ytSearch(q){return "https://www.youtube.com/results?search_query="+encodeURIComponent(q);}
 function swedishName(team){
   if(!team)return null;
   var a=(team.abbreviation||"").toUpperCase(); if(ABBR[a])return ABBR[a];
@@ -632,11 +637,14 @@ function infoHTML(m){
   return h;
 }
 function recapHTML(m){
-  var mi=matchInfo[m.id]||{}; var h='';
-  if(mi.recapUrl||mi.recapTitle){
-    h+='<a class="rcap" href="'+(mi.recapUrl||"#")+'" target="_blank" rel="noopener">\uD83D\uDCF0 '+(mi.recapTitle||"Sammanfattning")+' \u2197</a>';
+  var h='';
+  if(!m.ko){
+    var q="FIFA World Cup 2026 "+enName(m.home)+" v "+enName(m.away)+" highlights";
+    h+='<a class="rcap" href="'+ytSearch(q)+'" target="_blank" rel="noopener">\u25b6 H\u00f6jdpunkter (FIFA p\u00e5 YouTube) \u2197</a>';
+    h+='<a class="rcap rcap2" href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/highlights" target="_blank" rel="noopener">\uD83C\uDFC6 FIFA:s officiella h\u00f6jdpunkter \u2197</a>';
   }
-  if(mi.hlUrl){ h+='<a class="rcap" href="'+mi.hlUrl+'" target="_blank" rel="noopener">\u25b6 H\u00f6jdpunkter \u2197</a>'; }
+  var mi=matchInfo[m.id]||{};
+  if(mi.recapUrl)h+='<a class="rcap rcap2" href="'+mi.recapUrl+'" target="_blank" rel="noopener">\uD83D\uDCF0 '+(mi.recapTitle||"Sammanfattning")+' \u2197</a>';
   return h;
 }
 function statsHTML(m){
@@ -876,7 +884,7 @@ function rowHTML(m,now,next){
     '<span class="gtag'+(m.g==="F"?" swe":"")+'">'+(m.ko?m.round:"Grupp "+m.g)+caret+'</span></div></div>';
   if(expandable&&open){
     var inner='';
-    if(evs.length)inner+='<div class="evsec">'+eventsInner(evs)+'</div>';
+    if(evs.length)inner+='<div class="evsec">'+eventsInner(evs,m)+'</div>';
     var w=winprobHTML(m); if(w)inner+='<div class="evsec">'+w+'</div>';
     var s=statsHTML(m); if(s)inner+='<div class="evsec">'+s+'</div>';
     inner+=lineupHTML(m);
@@ -888,8 +896,9 @@ function rowHTML(m,now,next){
   }
   return out;
 }
-function eventsInner(evs){
+function eventsInner(evs,m){
   var ic={goal:"\u26bd",pen:"\u26bd",og:"\u26bd",yellow:"\uD83D\uDFE8",red:"\uD83D\uDFE5"};
+  var en=(m&&!m.ko)?(enName(m.home)+" "+enName(m.away)):"";
   var h='';
   evs.forEach(function(e){
     var fl=e.team&&T[e.team]?T[e.team][0]:"";
@@ -897,7 +906,12 @@ function eventsInner(evs){
     var nm=e.id?'<span class="evnm tapn" data-act="player" data-val="'+e.id+'">'+e.name+'</span>':'<span class="evnm">'+e.name+'</span>';
     var asst="";
     if(e.assist){asst=e.assistId?' <span class="evas tapn" data-act="player" data-val="'+e.assistId+'">assist: '+e.assist+'</span>':' <span class="evas">assist: '+e.assist+'</span>';}
-    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span>'+nm+tag+asst+'</div>';
+    var clip="";
+    if(en&&(e.kind==="goal"||e.kind==="pen"||e.kind==="og")){
+      var q="FIFA World Cup 2026 "+en+" "+e.name+" goal";
+      clip=' <a class="evclip" href="'+ytSearch(q)+'" target="_blank" rel="noopener" title="Se m\u00e5let">\u25b6</a>';
+    }
+    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span>'+nm+tag+asst+clip+'</div>';
   });
   return h;
 }
