@@ -170,6 +170,23 @@
   .pc-k{color:var(--faint)}
   .pc-v{color:var(--text);font-weight:600;text-align:right}
   .pc-msg{color:var(--sub);font-size:13px;padding:6px 0}
+  .evsectop{padding-top:9px;margin-top:9px;border-top:1px solid var(--line);border-bottom:none;padding-bottom:0;margin-bottom:0}
+  .evas{color:var(--sub);font-size:11px;margin-left:6px}
+  .wp{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:2px}
+  .wp>span{display:block;height:100%}
+  .wpl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--sub);margin-top:4px}
+  .comm{margin-top:2px;max-height:240px;overflow-y:auto}
+  .cln{display:flex;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--line)}
+  .cln:last-child{border-bottom:none}
+  .cmin{width:42px;flex-shrink:0;color:var(--faint);font-weight:700;font-variant-numeric:tabular-nums}
+  .ctx{color:var(--sub);line-height:1.45}
+  .ifrow{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px}
+  .ifk{color:var(--faint)}
+  .ifv{color:var(--text);font-weight:600;text-align:right}
+  .rcaps{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+  .rcap{display:block;font-size:12.5px;color:var(--gold);text-decoration:none;font-weight:700;padding:8px 11px;border:1px solid var(--goldDim);border-radius:9px;background:rgba(244,196,48,.06)}
+  .tform{margin-left:7px;display:inline-flex;gap:2px;vertical-align:middle}
+  .fdot{width:6px;height:6px;border-radius:50%;display:inline-block}
   footer{margin-top:26px;text-align:center;color:var(--faint);font-size:11px}
 </style>
 </head>
@@ -324,6 +341,10 @@ MATCHES.sort(function(a,b){return a.dt-b.dt});
 /* ---------- Live data (ESPN open API, no key) ---------- */
 var ABBR={MEX:"Mexiko",RSA:"Sydafrika",KOR:"Sydkorea",CZE:"Tjeckien",CAN:"Kanada",SUI:"Schweiz",QAT:"Qatar",BIH:"Bosnien",BRA:"Brasilien",MAR:"Marocko",SCO:"Skottland",HAI:"Haiti",USA:"USA",AUS:"Australien",PAR:"Paraguay",TUR:"Turkiet",GER:"Tyskland",ECU:"Ecuador",CIV:"Elfenbenskusten",CUW:"Curacao",NED:"Nederländerna",JPN:"Japan",TUN:"Tunisien",SWE:"Sverige",BEL:"Belgien",IRN:"Iran",EGY:"Egypten",NZL:"Nya Zeeland",ESP:"Spanien",URU:"Uruguay",KSA:"Saudiarabien",CPV:"Kap Verde",FRA:"Frankrike",SEN:"Senegal",NOR:"Norge",IRQ:"Irak",ARG:"Argentina",AUT:"Österrike",ALG:"Algeriet",DZA:"Algeriet",JOR:"Jordanien",POR:"Portugal",PRT:"Portugal",COL:"Colombia",UZB:"Uzbekistan",COD:"DR Kongo",ENG:"England",CRO:"Kroatien",PAN:"Panama",GHA:"Ghana"};
 var EN={"mexico":"Mexiko","south africa":"Sydafrika","south korea":"Sydkorea","korea republic":"Sydkorea","czechia":"Tjeckien","czech republic":"Tjeckien","canada":"Kanada","switzerland":"Schweiz","qatar":"Qatar","bosnia & herzegovina":"Bosnien","bosnia and herzegovina":"Bosnien","brazil":"Brasilien","morocco":"Marocko","scotland":"Skottland","haiti":"Haiti","united states":"USA","usa":"USA","australia":"Australien","paraguay":"Paraguay","turkey":"Turkiet","türkiye":"Turkiet","germany":"Tyskland","ecuador":"Ecuador","ivory coast":"Elfenbenskusten","côte d'ivoire":"Elfenbenskusten","cote d'ivoire":"Elfenbenskusten","curacao":"Curacao","curaçao":"Curacao","netherlands":"Nederländerna","japan":"Japan","tunisia":"Tunisien","sweden":"Sverige","belgium":"Belgien","iran":"Iran","egypt":"Egypten","new zealand":"Nya Zeeland","spain":"Spanien","uruguay":"Uruguay","saudi arabia":"Saudiarabien","cape verde":"Kap Verde","cabo verde":"Kap Verde","france":"Frankrike","senegal":"Senegal","norway":"Norge","iraq":"Irak","argentina":"Argentina","austria":"Österrike","algeria":"Algeriet","jordan":"Jordanien","portugal":"Portugal","colombia":"Colombia","uzbekistan":"Uzbekistan","dr congo":"DR Kongo","congo dr":"DR Kongo","democratic republic of the congo":"DR Kongo","england":"England","croatia":"Kroatien","panama":"Panama","ghana":"Ghana"};
+var POS_SV={"goalkeeper":"M\u00e5lvakt","goalie":"M\u00e5lvakt","keeper":"M\u00e5lvakt","defender":"F\u00f6rsvarare","defence":"F\u00f6rsvarare","defense":"F\u00f6rsvarare","centre-back":"Mittback","center back":"Mittback","central defender":"Mittback","centre back":"Mittback","full back":"Ytterback","fullback":"Ytterback","right back":"H\u00f6gerback","left back":"V\u00e4nsterback","right-back":"H\u00f6gerback","left-back":"V\u00e4nsterback","wing back":"Wingback","wing-back":"Wingback","midfielder":"Mittf\u00e4ltare","midfield":"Mittf\u00e4ltare","central midfield":"Central mittf\u00e4ltare","central midfielder":"Central mittf\u00e4ltare","defensive midfield":"Defensiv mittf\u00e4ltare","defensive midfielder":"Defensiv mittf\u00e4ltare","attacking midfield":"Offensiv mittf\u00e4ltare","attacking midfielder":"Offensiv mittf\u00e4ltare","winger":"Ytter","right winger":"H\u00f6gerytter","left winger":"V\u00e4nsterytter","wing":"Ytter","forward":"Anfallare","striker":"Anfallare","centre forward":"Centerforward","center forward":"Centerforward","second striker":"Andreanfallare","attacker":"Anfallare"};
+var COUNTRY_SV={"italy":"Italien","denmark":"Danmark","poland":"Polen","nigeria":"Nigeria","cameroon":"Kamerun","serbia":"Serbien","greece":"Grekland","ukraine":"Ukraina","russia":"Ryssland","ireland":"Irland","wales":"Wales","finland":"Finland","iceland":"Island","romania":"Rum\u00e4nien","hungary":"Ungern","slovakia":"Slovakien","slovenia":"Slovenien","mali":"Mali","cameroun":"Kamerun","china":"Kina","united states":"USA","czech republic":"Tjeckien","ivory coast":"Elfenbenskusten","cabo verde":"Kap Verde"};
+function posSv(s){if(!s)return"";var k=String(s).toLowerCase().trim();return POS_SV[k]||s;}
+function countrySv(s){if(!s)return"";var k=String(s).toLowerCase().trim();return COUNTRY_SV[k]||EN[k]||s;}
 function swedishName(team){
   if(!team)return null;
   var a=(team.abbreviation||"").toUpperCase(); if(ABBR[a])return ABBR[a];
@@ -337,7 +358,12 @@ MATCHES.forEach(function(m){if(!m.ko)pairIndex[[m.home,m.away].sort().join("|")]
 var results={};
 var events={};
 var scorers=[];
+var assists=[];
+var teamForm={};
 var lineups={};
+var commentary={};
+var winprob={};
+var matchInfo={};
 var lineupLoading={};
 var playerCache={};
 var playerLoading={};
@@ -349,7 +375,7 @@ function fetchLive(){
   fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260628&limit=300")
     .then(function(r){return r.json()})
     .then(function(d){
-      var res={}, evMap={}, scorerMap={};
+      var res={}, evMap={}, scorerMap={}, assistMap={}, tf={};
       (d.events||[]).forEach(function(ev){
         try{
           var comp=ev.competitions&&ev.competitions[0]; if(!comp)return;
@@ -362,10 +388,18 @@ function fetchLive(){
           var detail=(ev.status&&ev.status.type)?(ev.status.type.shortDetail||ev.status.type.detail||""):"";
           var hs=parseInt(home.score,10), as=parseInt(away.score,10);
           if(isNaN(hs))hs=null; if(isNaN(as))as=null;
-          var oh,oa; if(fx.home===hn){oh=hs;oa=as;}else{oh=as;oa=hs;}
+          var flip=(fx.home!==hn);
+          var oh,oa; if(!flip){oh=hs;oa=as;}else{oh=as;oa=hs;}
           var hStat=statMap(home),aStat=statMap(away);
-          var stats=(fx.home===hn)?{home:hStat,away:aStat}:{home:aStat,away:hStat};
-          res[fx.id]={hs:oh,as:oa,state:st,detail:detail,eid:ev.id,stats:stats};
+          var stats=flip?{home:aStat,away:hStat}:{home:hStat,away:aStat};
+          var hForm=home.form||"",aForm=away.form||"";
+          if(hForm)tf[hn]=hForm; if(aForm)tf[an]=aForm;
+          var form=flip?{home:aForm,away:hForm}:{home:hForm,away:aForm};
+          var ven=comp.venue||{}, addr=ven.address||{};
+          var odds=(comp.odds&&comp.odds[0]&&(comp.odds[0].details||comp.odds[0].summary))||"";
+          res[fx.id]={hs:oh,as:oa,state:st,detail:detail,eid:ev.id,flip:flip,stats:stats,form:form,
+            venue:ven.fullName||ven.shortName||"",city:addr.city||"",country:addr.country||"",
+            att:(comp.attendance!=null?comp.attendance:""),odds:odds};
           // match events
           var hId=home.team&&home.team.id, aId=away.team&&away.team.id;
           var evs=[];
@@ -373,25 +407,34 @@ function fetchLive(){
             var isGoal=de.scoringPlay===true, og=de.ownGoal===true, pen=de.penaltyKick===true;
             var yellow=de.yellowCard===true, red=de.redCard===true;
             if(!isGoal&&!yellow&&!red)return;
-            var ath=(de.athletesInvolved&&de.athletesInvolved[0])||null;
+            var inv=de.athletesInvolved||[];
+            var ath=inv[0]||null;
             var nm=ath?(ath.shortName||ath.displayName||ath.fullName||""):"";
             var aid=ath&&ath.id?ath.id:"";
             var tid=de.team&&de.team.id;
             var sideName=(tid===hId)?hn:(tid===aId)?an:null;
             var min=(de.clock&&de.clock.displayValue)?de.clock.displayValue:"";
             var kind=isGoal?(og?"og":(pen?"pen":"goal")):(red?"red":"yellow");
-            evs.push({min:min,kind:kind,name:nm,team:sideName,id:aid});
+            var asN="",asId="";
+            if(isGoal&&!og&&inv.length>1&&inv[1]){asN=inv[1].shortName||inv[1].displayName||"";asId=inv[1].id||"";}
+            evs.push({min:min,kind:kind,name:nm,team:sideName,id:aid,assist:asN,assistId:asId});
             if(isGoal&&!og&&nm){
               var k=nm+"|"+(sideName||"");
-              if(!scorerMap[k])scorerMap[k]={name:nm,team:sideName,goals:0,pens:0};
+              if(!scorerMap[k])scorerMap[k]={name:nm,team:sideName,goals:0,pens:0,id:aid};
               scorerMap[k].goals++; if(pen)scorerMap[k].pens++;
+            }
+            if(isGoal&&!og&&asN){
+              var ak=asN+"|"+(sideName||"");
+              if(!assistMap[ak])assistMap[ak]={name:asN,team:sideName,a:0,id:asId};
+              assistMap[ak].a++;
             }
           });
           if(evs.length)evMap[fx.id]=evs;
         }catch(e){}
       });
-      results=res; events=evMap;
+      results=res; events=evMap; teamForm=tf;
       scorers=Object.keys(scorerMap).map(function(k){return scorerMap[k]}).sort(function(a,b){return b.goals-a.goals||b.pens-a.pens||a.name.localeCompare(b.name)});
+      assists=Object.keys(assistMap).map(function(k){return assistMap[k]}).sort(function(a,b){return b.a-a.a||a.name.localeCompare(b.name)});
       live.status="ok"; live.ts=new Date(); render();
     })
     .catch(function(){ live.status="error"; render(); });
@@ -422,7 +465,11 @@ function fetchLineup(fid){
         out=d.rosters.map(function(r){return parseRoster(r,subT)}).filter(function(t){return t.starters.length||t.subs.length});
         if(!out.length)out=null;
       }
-      lineups[fid]=out; lineupLoading[fid]=false; render();
+      lineups[fid]=out;
+      commentary[fid]=parseCommentary(d);
+      winprob[fid]=parseWinProb(d,results[fid]&&results[fid].flip);
+      matchInfo[fid]=parseMatchInfo(d);
+      lineupLoading[fid]=false; render();
     })
     .catch(function(){ lineups[fid]=null; lineupLoading[fid]=false; render(); });
 }
@@ -492,15 +539,89 @@ function parsePlayer(d){
   var nat=a.citizenship||(a.birthPlace&&(a.birthPlace.country||a.birthPlace.countryName))||(a.flag&&a.flag.alt)||"";
   return {
     name:a.displayName||a.fullName||"",
-    pos:(a.position&&(a.position.displayName||a.position.name))||"",
+    pos:posSv((a.position&&(a.position.displayName||a.position.name))||""),
     num:a.jersey||"",
     age:a.age||"",
     ht:heightCm(a),
     wt:weightKg(a),
-    nat:nat,
+    nat:countrySv(nat),
     team:(a.team&&(a.team.displayName||a.team.name))||"",
     hs:(a.headshot&&a.headshot.href)||""
   };
+}
+function parseCommentary(d){
+  var arr=(d&&d.commentary)||[]; var out=[];
+  arr.forEach(function(c){
+    var txt=c.text||(c.play&&c.play.text)||""; if(!txt)return;
+    var min=(c.time&&c.time.displayValue)||(c.clock&&c.clock.displayValue)||"";
+    out.push({min:min,text:txt});
+  });
+  return out;
+}
+function parseWinProb(d,flip){
+  var arr=(d&&d.winprobability)||[]; if(!arr.length)return null;
+  var last=arr[arr.length-1];
+  var h=last.homeWinPercentage, t=last.tiePercentage, a=last.awayWinPercentage;
+  if(h==null&&a==null)return null;
+  h=Math.round((h||0)*100); a=Math.round((a||0)*100); t=Math.round((t||0)*100);
+  return flip?{h:a,d:t,a:h}:{h:h,d:t,a:a};
+}
+function parseMatchInfo(d){
+  var info={ref:"",recapTitle:"",recapUrl:"",hlUrl:""};
+  var offs=(d&&d.gameInfo&&d.gameInfo.officials)||(d&&d.officials)||[];
+  if(offs.length){
+    var refO=offs.filter(function(o){return /referee/i.test((o.position&&(o.position.name||o.position.displayName))||o.type||"")})[0]||offs[0];
+    info.ref=(refO&&(refO.displayName||refO.fullName))||"";
+  }
+  var art=(d&&d.article)||(d&&d.headlines&&d.headlines[0])||null;
+  if(art){ info.recapTitle=art.headline||art.title||art.description||""; info.recapUrl=(art.links&&art.links.web&&art.links.web.href)||art.link||""; }
+  var vids=(d&&d.videos)||[];
+  if(vids[0]&&vids[0].links&&vids[0].links.web&&vids[0].links.web.href)info.hlUrl=vids[0].links.web.href;
+  return info;
+}
+function formDots(str){
+  if(!str)return"";
+  var s=String(str).replace(/[^WDL]/gi,"").toUpperCase().slice(-5);
+  var col={W:"var(--green)",D:"var(--gold)",L:"var(--tv4)"};
+  var h='';
+  for(var i=0;i<s.length;i++){h+='<span class="fdot" style="background:'+(col[s[i]]||"var(--faint)")+'"></span>';}
+  return h;
+}
+function winprobHTML(m){
+  var w=winprob[m.id]; if(!w)return '';
+  var hn=m.ko?m.home:m.home, an=m.ko?m.away:m.away;
+  var hf=m.ko?"":T[m.home][0], af=m.ko?"":T[m.away][0];
+  return '<div class="luhead">Vinstsannolikhet</div>'+
+    '<div class="wp"><span style="width:'+w.h+'%;background:var(--gold)"></span><span style="width:'+w.d+'%;background:var(--faint)"></span><span style="width:'+w.a+'%;background:var(--svt)"></span></div>'+
+    '<div class="wpl"><span>'+hf+' '+w.h+'%</span><span>Oavgj. '+w.d+'%</span><span>'+w.a+'% '+af+'</span></div>';
+}
+function commentaryHTML(m){
+  var c=commentary[m.id]; if(!c||!c.length)return '';
+  var h='<div class="luhead">Referat</div><div class="comm">';
+  c.slice().reverse().slice(0,14).forEach(function(e){
+    h+='<div class="cln"><span class="cmin">'+(e.min||"")+'</span><span class="ctx">'+e.text+'</span></div>';
+  });
+  return h+'</div>';
+}
+function infoHTML(m){
+  var r=results[m.id]||{}; var mi=matchInfo[m.id]||{};
+  var bits=[];
+  if(r.venue)bits.push(["Arena",r.venue+(r.city?", "+r.city:"")]);
+  if(r.att!==""&&r.att!=null)bits.push(["\u00c5sk\u00e5dare",Number(r.att).toLocaleString("sv-SE")]);
+  if(mi.ref)bits.push(["Domare",mi.ref]);
+  if(r.odds)bits.push(["Odds",r.odds]);
+  if(!bits.length)return '';
+  var h='<div class="luhead">Matchfakta</div>';
+  bits.forEach(function(b){h+='<div class="ifrow"><span class="ifk">'+b[0]+'</span><span class="ifv">'+b[1]+'</span></div>';});
+  return h;
+}
+function recapHTML(m){
+  var mi=matchInfo[m.id]||{}; var h='';
+  if(mi.recapUrl||mi.recapTitle){
+    h+='<a class="rcap" href="'+(mi.recapUrl||"#")+'" target="_blank" rel="noopener">\uD83D\uDCF0 '+(mi.recapTitle||"Sammanfattning")+' \u2197</a>';
+  }
+  if(mi.hlUrl){ h+='<a class="rcap" href="'+mi.hlUrl+'" target="_blank" rel="noopener">\u25b6 H\u00f6jdpunkter \u2197</a>'; }
+  return h;
 }
 function statsHTML(m){
   var r=results[m.id]; if(!r||!r.stats)return '';
@@ -657,7 +778,7 @@ function render(){
         var gd=r.gf-r.ga, gds=(gd>0?"+":"")+gd;
         var cls=(i<2?"adv":"")+(r.t==="Sverige"?" swe":"");
         html+='<tr class="'+cls+'"><td class="pos">'+(i+1)+'</td>'+
-              '<td class="lft"><span style="margin-right:6px">'+T[r.t][0]+'</span>'+r.t+'</td>'+
+              '<td class="lft"><span style="margin-right:6px">'+T[r.t][0]+'</span>'+r.t+'<span class="tform">'+formDots(teamForm[r.t])+'</span></td>'+
               '<td>'+r.p+'</td><td>'+r.w+'</td><td>'+r.d+'</td><td>'+r.l+'</td><td>'+gds+'</td><td class="pts">'+r.pts+'</td></tr>';
       });
       html+='</tbody></table></div>';
@@ -674,12 +795,25 @@ function render(){
         var top=i===0, swe=s.team==="Sverige";
         var fl=s.team&&T[s.team]?T[s.team][0]:"";
         var pens=s.pens>0?'<span style="color:var(--faint);font-weight:500;font-size:11px"> ('+s.pens+' str)</span>':'';
+        var nm=s.id?'<span class="tapn" data-act="player" data-val="'+s.id+'">'+s.name+'</span>':s.name;
         html+='<tr class="'+(swe?"swe":"")+'"><td class="pos">'+(i+1)+'</td>'+
-              '<td class="lft" style="'+(top?"color:var(--gold);font-weight:800":"")+'">'+s.name+'</td>'+
+              '<td class="lft" style="'+(top?"color:var(--gold);font-weight:800":"")+'">'+nm+'</td>'+
               '<td class="lft" style="color:var(--sub);font-weight:500">'+fl+' '+(s.team||"")+'</td>'+
               '<td class="pts" style="'+(top?"color:var(--gold)":"")+'">'+s.goals+pens+'</td></tr>';
       });
       html+='</tbody></table></div>';
+      if(assists.length){
+        html+='<div style="margin-top:18px"><div style="font-size:12.5px;font-weight:800;letter-spacing:.04em;margin:0 0 6px 2px;color:var(--text)">Assist</div>';
+        html+='<table class="tbl"><thead><tr><th></th><th class="lft">Spelare</th><th class="lft">Lag</th><th>A</th></tr></thead><tbody>';
+        assists.forEach(function(s,i){
+          var fl=s.team&&T[s.team]?T[s.team][0]:"";
+          var nm=s.id?'<span class="tapn" data-act="player" data-val="'+s.id+'">'+s.name+'</span>':s.name;
+          html+='<tr class="'+(s.team==="Sverige"?"swe":"")+'"><td class="pos">'+(i+1)+'</td>'+
+                '<td class="lft">'+nm+'</td><td class="lft" style="color:var(--sub);font-weight:500">'+fl+' '+(s.team||"")+'</td>'+
+                '<td class="pts">'+s.a+'</td></tr>';
+        });
+        html+='</tbody></table></div>';
+      }
     }
     html+='<div class="gfull" style="display:block">Sj\u00e4lvm\u00e5l r\u00e4knas inte till n\u00e5gon spelares saldo. (str) = straffm\u00e5l.</div>';
   }
@@ -727,8 +861,12 @@ function rowHTML(m,now,next){
   if(expandable&&open){
     var inner='';
     if(evs.length)inner+='<div class="evsec">'+eventsInner(evs)+'</div>';
+    var w=winprobHTML(m); if(w)inner+='<div class="evsec">'+w+'</div>';
     var s=statsHTML(m); if(s)inner+='<div class="evsec">'+s+'</div>';
     inner+=lineupHTML(m);
+    var cm=commentaryHTML(m); if(cm)inner+='<div class="evsec evsectop">'+cm+'</div>';
+    var inf=infoHTML(m); if(inf)inner+='<div class="evsec evsectop">'+inf+'</div>';
+    var rc=recapHTML(m); if(rc)inner+='<div class="rcaps">'+rc+'</div>';
     if(!inner)inner='<div class="lumsg">Inga detaljer \u00e4n.</div>';
     out+='<div class="evts">'+inner+'</div>';
   }
@@ -741,7 +879,9 @@ function eventsInner(evs){
     var fl=e.team&&T[e.team]?T[e.team][0]:"";
     var tag=e.kind==="pen"?' <span class="evtag">str</span>':e.kind==="og"?' <span class="evtag">sj\u00e4lvm\u00e5l</span>':"";
     var nm=e.id?'<span class="evnm tapn" data-act="player" data-val="'+e.id+'">'+e.name+'</span>':'<span class="evnm">'+e.name+'</span>';
-    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span>'+nm+tag+'</div>';
+    var asst="";
+    if(e.assist){asst=e.assistId?' <span class="evas tapn" data-act="player" data-val="'+e.assistId+'">assist: '+e.assist+'</span>':' <span class="evas">assist: '+e.assist+'</span>';}
+    h+='<div class="evln"><span class="evmin">'+(e.min||"")+'</span><span class="evic">'+(ic[e.kind]||"")+'</span><span class="evfl">'+fl+'</span>'+nm+tag+asst+'</div>';
   });
   return h;
 }
