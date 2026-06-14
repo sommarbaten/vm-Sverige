@@ -375,6 +375,8 @@ var matchInfo={};
 var lineupLoading={};
 var playerCache={};
 var playerLoading={};
+var photoCache={};
+var photoLoading={};
 var live={status:"idle",ts:null};
 
 function fetchLive(){
@@ -519,12 +521,26 @@ function parseRoster(r,subT){
   return {team:teamName,formation:form,starters:starters,subs:subs};
 }
 function fetchPlayer(id){
-  if(playerCache[id]!==undefined||playerLoading[id]){render();return;}
+  if(playerCache[id]!==undefined){render();ensurePhoto(id);return;}
+  if(playerLoading[id]){render();return;}
   playerLoading[id]=true; render();
   fetch("https://site.web.api.espn.com/apis/common/v3/sports/soccer/fifa.world/athletes/"+id)
     .then(function(x){return x.json()})
-    .then(function(d){ playerCache[id]=parsePlayer(d); playerLoading[id]=false; render(); })
+    .then(function(d){ playerCache[id]=parsePlayer(d); playerLoading[id]=false; ensurePhoto(id); render(); })
     .catch(function(){ playerCache[id]=null; playerLoading[id]=false; render(); });
+}
+function ensurePhoto(id){
+  var p=playerCache[id]; if(!p||p.hs)return;
+  fetchPhoto(id,p.full||p.name);
+}
+function fetchPhoto(id,name){
+  if(!name||photoCache[id]!==undefined||photoLoading[id])return;
+  photoLoading[id]=true;
+  var u="https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch="+encodeURIComponent(name+" footballer")+"&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=200&format=json&origin=*";
+  fetch(u).then(function(x){return x.json()}).then(function(d){
+    var src=""; try{var p=d.query.pages;var k=Object.keys(p)[0];src=(p[k].thumbnail&&p[k].thumbnail.source)||"";}catch(e){}
+    photoCache[id]=src||null; photoLoading[id]=false; render();
+  }).catch(function(){ photoCache[id]=null; photoLoading[id]=false; render(); });
 }
 function heightCm(a){
   var s=a.displayHeight||"";
@@ -547,6 +563,7 @@ function parsePlayer(d){
   var nat=a.citizenship||(a.birthPlace&&(a.birthPlace.country||a.birthPlace.countryName))||(a.flag&&a.flag.alt)||"";
   return {
     name:a.displayName||a.fullName||"",
+    full:a.fullName||a.displayName||"",
     pos:posSv((a.position&&(a.position.displayName||a.position.name))||""),
     num:a.jersey||"",
     age:a.age||"",
@@ -693,12 +710,13 @@ function playerOverlay(){
   if(playerLoading[id]||p===undefined)body='<div class="pc-msg">H\u00e4mtar spelarinfo\u2026</div>';
   else if(!p)body='<div class="pc-msg">Ingen spelarinfo tillg\u00e4nglig f\u00f6r den h\u00e4r spelaren.</div>';
   else{
-    var hs=(p.hs)||("https://a.espncdn.com/i/headshots/soccer/players/full/"+id+".png");
+    var photo=p.hs||photoCache[id]||"";
     var ini=(p.name||"").split(/\s+/).map(function(w){return w&&w[0]?w[0]:""}).join("").slice(0,2).toUpperCase();
     var rows=[["Position",p.pos],["Tr\u00f6jnr",p.num],["\u00c5lder",p.age],["L\u00e4ngd",p.ht],["Vikt",p.wt],["Nationalitet",p.nat],["Lag",p.team]];
     var r='';
     rows.forEach(function(x){if(x[1]!==""&&x[1]!=null)r+='<div class="pc-row"><span class="pc-k">'+x[0]+'</span><span class="pc-v">'+x[1]+'</span></div>';});
-    body='<div class="pc-name"><span class="pc-av"><span class="pc-ini">'+ini+'</span><img class="pc-img" src="'+hs+'" alt="" onerror="this.style.display=\'none\'"></span><span>'+p.name+'</span></div>'+(r||'<div class="pc-msg">Begr\u00e4nsad info tillg\u00e4nglig.</div>');
+    var av='<span class="pc-av"><span class="pc-ini">'+ini+'</span>'+(photo?'<img class="pc-img" src="'+photo+'" alt="" onerror="this.style.display=\'none\'">':'')+'</span>';
+    body='<div class="pc-name">'+av+'<span>'+p.name+'</span></div>'+(r||'<div class="pc-msg">Begr\u00e4nsad info tillg\u00e4nglig.</div>');
   }
   return '<div class="pc-back" data-act="closePlayer"><div class="pc-card" data-act="noop"><button class="pc-x" data-act="closePlayer">\u2715</button>'+body+'</div></div>';
 }
