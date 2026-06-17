@@ -719,12 +719,12 @@ function watchHTML(m){
   if(m.ko)return '';
   var r=results[m.id]; if(!r||r.state==="pre")return '';
   var svt=(m.ch==="SVT");
-  var base=svt?"https://www.svtplay.se/sok?q=":"https://www.tv4play.se/sok?q=";
-  var name=svt?"SVT Play":"TV4 Play";
   var q=encodeURIComponent(m.home+" "+m.away);
+  var url=svt?("https://www.svtplay.se/sok?q="+q):("https://www.tv4play.se/sok/"+q);
+  var name=svt?"SVT Play":"TV4 Play";
   var liveNow=r.state==="in";
   var label=liveNow?("\u25b6 Se live p\u00e5 "+name):("\u21bb Se / repris p\u00e5 "+name);
-  return '<a class="rcap'+(liveNow?" rcaplive":" rcap2")+'" href="'+base+q+'" target="_blank" rel="noopener">'+label+' \u2197</a>';
+  return '<a class="rcap'+(liveNow?" rcaplive":" rcap2")+'" href="'+url+'" target="_blank" rel="noopener">'+label+' \u2197</a>';
 }
 function recapHTML(m){
   var h='';
