@@ -189,6 +189,7 @@
   .rcaps{margin-top:10px;display:flex;flex-direction:column;gap:7px}
   .rcap{display:block;font-size:12.5px;color:var(--gold);text-decoration:none;font-weight:700;padding:8px 11px;border:1px solid var(--goldDim);border-radius:9px;background:rgba(244,196,48,.06)}
   .rcap2{color:var(--sub);border-color:var(--line);background:var(--bg2)}
+  .rcaplive{color:var(--green);border-color:var(--green);background:rgba(63,191,111,.12)}
   .evclip{margin-left:7px;color:var(--green);text-decoration:none;font-size:12px}
   .tform{margin-left:7px;display:inline-flex;gap:2px;vertical-align:middle}
   .fdot{width:6px;height:6px;border-radius:50%;display:inline-block}
@@ -714,6 +715,17 @@ function infoHTML(m){
   bits.forEach(function(b){h+='<div class="ifrow"><span class="ifk">'+b[0]+'</span><span class="ifv">'+b[1]+'</span></div>';});
   return h;
 }
+function watchHTML(m){
+  if(m.ko)return '';
+  var r=results[m.id]; if(!r||r.state==="pre")return '';
+  var svt=(m.ch==="SVT");
+  var base=svt?"https://www.svtplay.se/sok?q=":"https://www.tv4play.se/sok?q=";
+  var name=svt?"SVT Play":"TV4 Play";
+  var q=encodeURIComponent(m.home+" "+m.away);
+  var liveNow=r.state==="in";
+  var label=liveNow?("\u25b6 Se live p\u00e5 "+name):("\u21bb Se / repris p\u00e5 "+name);
+  return '<a class="rcap'+(liveNow?" rcaplive":" rcap2")+'" href="'+base+q+'" target="_blank" rel="noopener">'+label+' \u2197</a>';
+}
 function recapHTML(m){
   var h='';
   if(!m.ko){
@@ -1114,6 +1126,7 @@ function rowHTML(m,now,next){
     '<span class="gtag'+(m.g==="F"?" swe":"")+'">'+(m.ko?m.round:"Grupp "+m.g)+caret+'</span></div></div>';
   if(expandable&&open){
     var inner='';
+    var wl=watchHTML(m); if(wl)inner+='<div class="rcaps" style="margin-top:0;margin-bottom:9px">'+wl+'</div>';
     if(evs.length)inner+='<div class="evsec">'+eventsInner(evs,m)+'</div>';
     var w=winprobHTML(m); if(w)inner+='<div class="evsec">'+w+'</div>';
     var s=statsHTML(m); if(s)inner+='<div class="evsec">'+s+'</div>';
