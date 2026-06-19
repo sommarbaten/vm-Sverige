@@ -205,6 +205,10 @@
   .simgst{font-size:11.5px;font-weight:600;color:var(--faint)}
   .simgh.done .simgst{color:var(--green)}
   .simr{display:flex;align-items:center;gap:6px;padding:5px 12px}
+  .simmatch{padding-top:4px}
+  .simtime{font-size:9.5px;color:var(--faint);font-weight:600;padding:0 12px 1px;letter-spacing:.02em}
+  .komtime{display:block;font-size:9px;color:var(--faint);font-weight:600;margin-top:1px}
+  .brktime{font-size:8.5px;color:var(--faint);text-align:center;margin-bottom:3px;font-weight:600}
   .simt{flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .simtr{text-align:right}
   .simin{width:34px;text-align:center;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px 0;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -219,7 +223,7 @@
   .simg3{color:var(--faint);font-size:11px}
   .simrh{margin:16px 0 7px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
   .kom{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-  .komn{width:34px;flex-shrink:0;font-size:10px;color:var(--faint);font-weight:700;font-variant-numeric:tabular-nums}
+  .komn{width:52px;flex-shrink:0;font-size:10px;color:var(--faint);font-weight:700;font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
   .komt{flex:1;display:flex;flex-direction:column;gap:3px}
   .kobtn{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);color:var(--text);font-size:13px;font-weight:600;padding:8px 11px;border-radius:9px;cursor:pointer}
   .kobtn.win{border-color:var(--gold);background:rgba(244,196,48,.14);color:var(--gold);font-weight:800}
@@ -746,6 +750,10 @@ var R32MAP={
 };
 var SLOT_ALLOWED={A:["C","E","F","H","I"],B:["E","F","G","I","J"],D:["B","E","F","I","J"],E:["A","B","C","D","F"],G:["A","E","H","I","J"],I:["C","D","F","G","H"],K:["D","E","I","J","L"],L:["E","H","I","J","K"]};
 var KOTREE={89:[74,77],90:[73,75],91:[76,78],92:[79,80],93:[83,84],94:[81,82],95:[86,88],96:[85,87],97:[89,90],98:[93,94],99:[91,92],100:[95,96],101:[97,98],102:[99,100],104:[101,102]};
+var KO_TIME={73:["2026-06-28","21:00"],74:["2026-06-29","22:30"],75:["2026-06-30","03:00"],76:["2026-06-29","19:00"],77:["2026-06-30","23:00"],78:["2026-06-30","19:00"],79:["2026-07-01","03:00"],80:["2026-07-01","18:00"],81:["2026-07-02","02:00"],82:["2026-07-01","22:00"],83:["2026-07-03","01:00"],84:["2026-07-02","21:00"],85:["2026-07-03","05:00"],86:["2026-07-04","00:00"],87:["2026-07-04","03:30"],88:["2026-07-03","20:00"],89:["2026-07-04","23:00"],90:["2026-07-04","19:00"],91:["2026-07-05","22:00"],92:["2026-07-06","02:00"],93:["2026-07-06","21:00"],94:["2026-07-07","02:00"],95:["2026-07-07","18:00"],96:["2026-07-07","22:00"],97:["2026-07-09","22:00"],98:["2026-07-10","21:00"],99:["2026-07-11","23:00"],100:["2026-07-12","03:00"],101:["2026-07-14","21:00"],102:["2026-07-15","21:00"],103:["2026-07-18","23:00"],104:["2026-07-19","21:00"]};
+var WDS=["s\u00f6n","m\u00e5n","tis","ons","tor","fre","l\u00f6r"];
+function shortDT(date,time){var d=date.split("-").map(Number);var dt=new Date(d[0],d[1]-1,d[2]);return WDS[dt.getDay()]+" "+d[2]+"/"+d[1]+" "+time;}
+function koTime(n){return KO_TIME[n]?shortDT(KO_TIME[n][0],KO_TIME[n][1]):"";}
 var KO_ROUNDS=[{t:"16-delsfinal",ns:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]},{t:"\u00c5ttondelsfinal",ns:[89,90,91,92,93,94,95,96]},{t:"Kvartsfinal",ns:[97,98,99,100]},{t:"Semifinal",ns:[101,102]},{t:"Final",ns:[104]},{t:"Bronsmatch",ns:[103]}];
 
 function setSimScore(id,side,val){ if(!state.sim.scores[id])state.sim.scores[id]={h:"",a:""}; state.sim.scores[id][side]=val.replace(/[^0-9]/g,""); render(); }
@@ -806,11 +814,11 @@ function simHTML(){
     h+='<div class="simg"><button class="simgh'+(c?" done":"")+'" data-act="simgroup" data-val="'+g+'"><span>Grupp '+g+(g==="F"?" \uD83C\uDDF8\uD83C\uDDEA":"")+'</span><span class="simgst">'+(c?("\u2713 "+T[ctx.winners[g]][0]+" "+ctx.winners[g]):(open?"\u25b4":"fyll i \u25be"))+'</span></button>';
     if(open){
       GM[g].forEach(function(id){ var m=MID[id], s=state.sim.scores[id]||{h:"",a:""};
-        h+='<div class="simr"><span class="simt">'+T[m.home][0]+' '+m.home+'</span>'+
+        h+='<div class="simmatch"><div class="simtime">'+shortDT(m.date,m.time)+' \u00b7 '+m.ch+'</div><div class="simr"><span class="simt">'+T[m.home][0]+' '+m.home+'</span>'+
            '<input type="number" min="0" inputmode="numeric" class="simin" value="'+(s.h||"")+'" onchange="setSimScore(\''+id+'\',\'h\',this.value)">'+
            '<span class="simdash">\u2013</span>'+
            '<input type="number" min="0" inputmode="numeric" class="simin" value="'+(s.a||"")+'" onchange="setSimScore(\''+id+'\',\'a\',this.value)">'+
-           '<span class="simt simtr">'+m.away+' '+T[m.away][0]+'</span></div>';
+           '<span class="simt simtr">'+m.away+' '+T[m.away][0]+'</span></div></div>';
       });
       var tb=ctx.tables[g];
       h+='<div class="simmini">';
@@ -855,11 +863,11 @@ function simTreeHTML(ctx){
     h+='<div class="brkcol"><div class="brkh">'+c.t+'</div><div class="brkmatches"'+(isFinal?' style="justify-content:center"':'')+'>';
     c.ns.forEach(function(n){
       var mt=koMatch(n,ctx),pick=state.sim.picks[n];
-      h+='<div class="brkm">'+brkTeam(n,mt.a,pick)+brkTeam(n,mt.b,pick)+'</div>';
+      h+='<div class="brkm"><div class="brktime">'+koTime(n)+'</div>'+brkTeam(n,mt.a,pick)+brkTeam(n,mt.b,pick)+'</div>';
     });
     if(isFinal){
       var bm=koMatch(103,ctx),bp=state.sim.picks[103];
-      h+='<div class="brkbrons"><div class="brkbl">Brons</div><div class="brkm">'+brkTeam(103,bm.a,bp)+brkTeam(103,bm.b,bp)+'</div></div>';
+      h+='<div class="brkbrons"><div class="brkbl">Brons</div><div class="brkm"><div class="brktime">'+koTime(103)+'</div>'+brkTeam(103,bm.a,bp)+brkTeam(103,bm.b,bp)+'</div></div>';
     }
     h+='</div></div>';
   });
@@ -874,7 +882,7 @@ function brkTeam(n,side,pick){
 }
 function koRowHTML(n,ctx){
   var mt=koMatch(n,ctx), pick=state.sim.picks[n];
-  return '<div class="kom"><span class="komn">M'+n+'</span><div class="komt">'+koBtn(n,mt.a,pick)+koBtn(n,mt.b,pick)+'</div></div>';
+  return '<div class="kom"><span class="komn">M'+n+'<span class="komtime">'+koTime(n)+'</span></span><div class="komt">'+koBtn(n,mt.a,pick)+koBtn(n,mt.b,pick)+'</div></div>';
 }
 function koBtn(n,side,pick){
   if(side.team){ var win=pick===side.team, fl=T[side.team]?T[side.team][0]:"";
